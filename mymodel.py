@@ -1,8 +1,8 @@
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
-from groupdcnplus import DeformConv2d
-from PixelChannelSE import SE_Block
+#from groupdcnplus import DeformConv2d
+#from PixelChannelSE import SE_Block
 
 
 class myBlock(nn.Module):
@@ -11,12 +11,11 @@ class myBlock(nn.Module):
         self.q1 = nn.Conv2d(channel, channel, kernel_size=(3, 3), padding=(1, 1))
         self.q2 = nn.Conv2d(channel, channel, kernel_size=(3, 3), padding=(1, 1))
         self.k1 = nn.Conv2d(channel, channel, kernel_size=(3, 3), padding=(1, 1))
-        self.br1 = DeformConv2d(channel, channel, kernel_size1=3, kernel_size2=7, groups=8)
+        self.br1 = nn.Conv2d(channel, channel, kernel_size=(3, 3), padding=(1, 1))
         self.k2 = nn.Conv2d(channel, channel, kernel_size=(3, 3), padding=(1, 1))
-        self.br2 = DeformConv2d(channel, channel, kernel_size1=3, kernel_size2=7, groups=8)
+        self.br2 = nn.Conv2d(channel, channel, kernel_size=(3, 3), padding=(1, 1))
         self.v1 = nn.Conv2d(channel, channel, kernel_size=(3, 3), padding=(1, 1))
         self.v2 = nn.Conv2d(channel, channel, kernel_size=(3, 3), padding=(1, 1))
-        self.SE = SE_Block(inchannel=channel)
         self.upchannel = upchannel
         self.after_block1 = nn.Sequential(
             nn.Conv2d(channel, 2 * channel, kernel_size=(3, 3), padding=(1, 1), stride=(2, 2)),
@@ -45,8 +44,8 @@ class myBlock(nn.Module):
         att2 = torch.matmul(q2, k1.permute(0, 1, 3, 2))
         att2 = att2 / torch.std(att2)
         out2 = torch.matmul(v2, self.softmax(att2))
-        out1 = self.SE(out1) + x1
-        out2 = self.SE(out2) + x2
+        out1 = out1 + x1
+        out2 = out2 + x2
         if self.upchannel:
             out1 = self.after_block1(out1)
             out2 = self.after_block2(out2)
